@@ -4,11 +4,14 @@ import BookForm from '@/components/BookForm';
 import BookList from '@/components/BookList';
 import BookRoulette from '@/components/BookRoulette';
 import { toast } from "sonner";
+import { Book } from '@/types/book';
 
 const Index = () => {
   // State management
-  const [books, setBooks] = useState<string[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [googleBooksApiKey, setGoogleBooksApiKey] = useState<string>("");
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
 
   // Load books from localStorage on initial load
   useEffect(() => {
@@ -20,6 +23,13 @@ const Index = () => {
         console.error('Error loading saved books:', e);
       }
     }
+
+    const savedApiKey = localStorage.getItem('googleBooksApiKey');
+    if (savedApiKey) {
+      setGoogleBooksApiKey(savedApiKey);
+    } else {
+      setShowApiKeyInput(true);
+    }
   }, []);
 
   // Save books to localStorage whenever they change
@@ -28,8 +38,8 @@ const Index = () => {
   }, [books]);
 
   // Book management functions
-  const handleAddBook = (book: string) => {
-    if (books.includes(book)) {
+  const handleAddBook = (book: Book) => {
+    if (books.some(b => b.id === book.id)) {
       toast.error("This book is already in your collection");
       return;
     }
@@ -37,9 +47,9 @@ const Index = () => {
     toast.success("Book added to your collection");
   };
 
-  const handleUpdateBook = (index: number, newTitle: string) => {
+  const handleUpdateBook = (index: number, updatedBook: Book) => {
     const updatedBooks = [...books];
-    updatedBooks[index] = newTitle;
+    updatedBooks[index] = updatedBook;
     setBooks(updatedBooks);
   };
 
@@ -62,6 +72,13 @@ const Index = () => {
     }, 6000);
   };
 
+  const handleSaveApiKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('googleBooksApiKey', googleBooksApiKey);
+    setShowApiKeyInput(false);
+    toast.success("API key saved successfully");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20">
       <div className="container px-4 py-12 mx-auto">
@@ -77,10 +94,35 @@ const Index = () => {
             </p>
           </div>
           
+          {/* API Key Form */}
+          {showApiKeyInput && (
+            <div className="mb-8 p-4 glass-morphism rounded-lg max-w-md mx-auto">
+              <h2 className="text-xl font-semibold mb-2">Google Books API Key</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Please enter your Google Books API key to enable book search.
+              </p>
+              <form onSubmit={handleSaveApiKey} className="flex gap-2">
+                <Input
+                  type="text"
+                  value={googleBooksApiKey}
+                  onChange={(e) => setGoogleBooksApiKey(e.target.value)}
+                  placeholder="Paste your API key here"
+                  className="flex-1"
+                />
+                <Button type="submit" disabled={!googleBooksApiKey.trim()}>
+                  Save
+                </Button>
+              </form>
+            </div>
+          )}
+          
           {/* Main content */}
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             <div className="space-y-8">
-              <BookForm onAddBook={handleAddBook} />
+              <BookForm 
+                onAddBook={handleAddBook} 
+                googleBooksApiKey={googleBooksApiKey}
+              />
               <BookList 
                 books={books} 
                 onUpdateBook={handleUpdateBook} 
@@ -90,7 +132,7 @@ const Index = () => {
             
             <div className="md:pl-8 md:border-l">
               <BookRoulette 
-                books={books} 
+                books={books.map(book => book.title)} 
                 onRequestRun={handleRunRoulette} 
                 isRunning={isRunning} 
               />
