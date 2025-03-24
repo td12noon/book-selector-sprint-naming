@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Command, CommandInput, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PlusCircle, Search, Loader2, BookOpen } from "lucide-react";
 import { BookSearchResult, Book } from '@/types/book';
@@ -112,7 +112,6 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey }) => 
             </div>
           </PopoverTrigger>
           <PopoverContent className="p-0 w-[300px] md:w-[400px]" side="bottom" align="start">
-            {/* Fix: Ensure Command component is properly initialized */}
             <div className="relative">
               <Command>
                 <CommandInput 
@@ -120,38 +119,40 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey }) => 
                   value={searchQuery}
                   onValueChange={setSearchQuery}
                 />
-                <CommandEmpty>
-                  {searchQuery.length < 3 ? 'Type at least 3 characters to search' : 'No books found'}
-                </CommandEmpty>
-                <CommandGroup className="max-h-[300px] overflow-auto">
-                  {searchResults && searchResults.length > 0 ? (
-                    searchResults.map((book) => (
-                      <CommandItem
-                        key={book.id}
-                        onSelect={() => handleSelectBook(book)}
-                        className="flex items-center gap-2 py-2 cursor-pointer"
-                      >
-                        <div className="w-10 h-10 flex-shrink-0 bg-muted flex items-center justify-center rounded overflow-hidden">
-                          {book.volumeInfo.imageLinks?.smallThumbnail ? (
-                            <img 
-                              src={book.volumeInfo.imageLinks.smallThumbnail} 
-                              alt={book.volumeInfo.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <BookOpen className="w-6 h-6 text-muted-foreground" />
-                          )}
-                        </div>
-                        <div className="flex-1 truncate">
-                          <p className="font-medium truncate">{book.volumeInfo.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {book.volumeInfo.authors?.join(', ') || 'Unknown Author'}
-                          </p>
-                        </div>
-                      </CommandItem>
-                    ))
-                  ) : null}
-                </CommandGroup>
+                <CommandList>
+                  <CommandEmpty>
+                    {searchQuery.length < 3 ? 'Type at least 3 characters to search' : 'No books found'}
+                  </CommandEmpty>
+                  <CommandGroup className="max-h-[300px] overflow-auto">
+                    {searchResults && searchResults.length > 0 ? (
+                      searchResults.map((book) => (
+                        <CommandItem
+                          key={book.id}
+                          onSelect={() => handleSelectBook(book)}
+                          className="flex items-center gap-2 py-2 cursor-pointer"
+                        >
+                          <div className="w-10 h-10 flex-shrink-0 bg-muted flex items-center justify-center rounded overflow-hidden">
+                            {book.volumeInfo.imageLinks?.smallThumbnail ? (
+                              <img 
+                                src={book.volumeInfo.imageLinks.smallThumbnail} 
+                                alt={book.volumeInfo.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <BookOpen className="w-6 h-6 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1 truncate">
+                            <p className="font-medium truncate">{book.volumeInfo.title}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {book.volumeInfo.authors?.join(', ') || 'Unknown Author'}
+                            </p>
+                          </div>
+                        </CommandItem>
+                      ))
+                    ) : null}
+                  </CommandGroup>
+                </CommandList>
               </Command>
             </div>
           </PopoverContent>
