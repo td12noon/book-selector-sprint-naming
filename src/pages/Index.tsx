@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import BookForm from '@/components/BookForm';
 import BookList from '@/components/BookList';
 import BookRoulette from '@/components/BookRoulette';
+import LogViewer, { LogEntry } from '@/components/LogViewer';
 import { toast } from "sonner";
 import { Book } from '@/types/book';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ClipboardList } from 'lucide-react';
 
 const Index = () => {
   // State management
@@ -14,6 +16,8 @@ const Index = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [googleBooksApiKey, setGoogleBooksApiKey] = useState<string>("");
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
+  const [logsOpen, setLogsOpen] = useState(false);
 
   // Load books from localStorage on initial load
   useEffect(() => {
@@ -32,12 +36,37 @@ const Index = () => {
     } else {
       setShowApiKeyInput(true);
     }
+
+    // Load saved logs
+    const savedLogs = localStorage.getItem('apiRequestLogs');
+    if (savedLogs) {
+      try {
+        setLogEntries(JSON.parse(savedLogs));
+      } catch (e) {
+        console.error('Error loading logs:', e);
+      }
+    }
   }, []);
 
   // Save books to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('bookRouletteBooks', JSON.stringify(books));
   }, [books]);
+
+  // Save logs to localStorage
+  useEffect(() => {
+    localStorage.setItem('apiRequestLogs', JSON.stringify(logEntries));
+  }, [logEntries]);
+
+  // Log handler function
+  const handleAddLog = (log: LogEntry) => {
+    setLogEntries(prev => [log, ...prev]);
+  };
+
+  const handleClearLogs = () => {
+    setLogEntries([]);
+    toast.success("Logs cleared");
+  };
 
   // Book management functions
   const handleAddBook = (book: Book) => {
@@ -124,6 +153,7 @@ const Index = () => {
               <BookForm 
                 onAddBook={handleAddBook} 
                 googleBooksApiKey={googleBooksApiKey}
+                onLogRequest={handleAddLog}
               />
               <BookList 
                 books={books} 
@@ -142,6 +172,32 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      {/* Logs Button */}
+      <div className="fixed bottom-6 right-6">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="bg-gray-100 text-gray-600 hover:text-gray-900 shadow-md rounded-full px-4 border border-gray-200"
+          onClick={() => setLogsOpen(true)}
+        >
+          <ClipboardList className="w-4 h-4 mr-2" />
+          Logs
+          {logEntries.length > 0 && (
+            <span className="ml-2 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {logEntries.length > 99 ? '99+' : logEntries.length}
+            </span>
+          )}
+        </Button>
+      </div>
+
+      {/* Logs Viewer */}
+      <LogViewer 
+        open={logsOpen} 
+        onOpenChange={setLogsOpen}
+        logs={logEntries}
+        onClearLogs={handleClearLogs}
+      />
     </div>
   );
 };

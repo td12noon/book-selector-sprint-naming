@@ -7,13 +7,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { PlusCircle, Search, Loader2, BookOpen } from "lucide-react";
 import { BookSearchResult, Book } from '@/types/book';
 import { toast } from "sonner";
+import { LogEntry } from './LogViewer';
 
 interface BookFormProps {
   onAddBook: (book: Book) => void;
   googleBooksApiKey: string;
+  onLogRequest: (log: LogEntry) => void;
 }
 
-const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey }) => {
+const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLogRequest }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<BookSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,18 +35,46 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey }) => 
 
     searchTimeoutRef.current = setTimeout(async () => {
       setIsLoading(true);
+      
+      const timestamp = new Date().toISOString();
+      const apiUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+        searchQuery
+      )}&key=${googleBooksApiKey}&maxResults=5`;
+      
+      // Log the request
+      onLogRequest({
+        timestamp,
+        action: `Search Books API: "${searchQuery}"`,
+        status: 'success', // Default to success, will update if there's an error
+        details: `Request URL: ${apiUrl}`
+      });
+
       try {
-        const response = await fetch(
-          `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
-            searchQuery
-          )}&key=${googleBooksApiKey}&maxResults=5`
-        );
+        const response = await fetch(apiUrl);
+        const responseData = await response.text();
 
         if (!response.ok) {
+          // Log the error response
+          onLogRequest({
+            timestamp,
+            action: `Search Books API Error: "${searchQuery}"`,
+            status: 'error',
+            details: `Status: ${response.status} ${response.statusText}\nResponse: ${responseData}`
+          });
+          
           throw new Error('Failed to search books');
         }
 
-        const data = await response.json();
+        const data = JSON.parse(responseData);
+        
+        // Log the successful response
+        onLogRequest({
+          timestamp,
+          action: `Search Books API Success: "${searchQuery}"`,
+          status: 'success',
+          details: `Found ${data.items?.length || 0} results\nResponse: ${JSON.stringify(data, null, 2).substring(0, 500)}${JSON.stringify(data, null, 2).length > 500 ? '...' : ''}`
+        });
+        
         setSearchResults(data.items || []);
       } catch (error) {
         console.error('Error searching books:', error);
@@ -60,7 +90,7 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey }) => 
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchQuery, googleBooksApiKey]);
+  }, [searchQuery, googleBooksApiKey, onLogRequest]);
 
   const handleSelectBook = (book: BookSearchResult) => {
     const newBook: Book = {
