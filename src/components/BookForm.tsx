@@ -22,17 +22,19 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
   const [open, setOpen] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Search Google Books API
+  // Search Google Books API with debounce
   useEffect(() => {
     if (searchQuery.trim().length < 3) {
       setSearchResults([]);
       return;
     }
 
+    // Clear existing timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
+    // Set new timeout for debounce (wait 500ms after typing stops)
     searchTimeoutRef.current = setTimeout(async () => {
       setIsLoading(true);
       
@@ -78,6 +80,10 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
         
         if (data.items && Array.isArray(data.items)) {
           setSearchResults(data.items);
+          // Ensure popover is open when results are found
+          if (data.items.length > 0 && !open) {
+            setOpen(true);
+          }
         } else {
           console.log("No items found in API response:", data);
           setSearchResults([]);
@@ -89,7 +95,7 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
       } finally {
         setIsLoading(false);
       }
-    }, 500);
+    }, 500); // 500ms debounce delay
 
     return () => {
       if (searchTimeoutRef.current) {
@@ -115,6 +121,21 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
     setOpen(false);
   };
 
+  // Handle input change separately to update popover state
+  const handleInputChange = (value: string) => {
+    setSearchQuery(value);
+    
+    // Open popover automatically when typing
+    if (value.trim().length >= 3 && !open) {
+      setOpen(true);
+    }
+    
+    // Close popover when input is cleared
+    if (value.trim().length < 3 && open) {
+      setOpen(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="space-y-2">
@@ -134,7 +155,7 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
               <Input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleInputChange(e.target.value)}
                 placeholder="Search for a book..."
                 className="h-12 px-4 transition-all duration-200 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               />
@@ -152,40 +173,38 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
               <CommandInput 
                 placeholder="Type to search..." 
                 value={searchQuery}
-                onValueChange={setSearchQuery}
+                onValueChange={handleInputChange}
               />
               <CommandList>
                 <CommandEmpty>
                   {searchQuery.length < 3 ? 'Type at least 3 characters to search' : 'No books found'}
                 </CommandEmpty>
                 <CommandGroup heading="Search Results" className="max-h-[300px] overflow-auto">
-                  {searchResults && searchResults.length > 0 ? (
-                    searchResults.map((book) => (
-                      <CommandItem
-                        key={book.id}
-                        onSelect={() => handleSelectBook(book)}
-                        className="flex items-center gap-2 py-2 cursor-pointer"
-                      >
-                        <div className="w-10 h-10 flex-shrink-0 bg-muted flex items-center justify-center rounded overflow-hidden">
-                          {book.volumeInfo.imageLinks?.smallThumbnail ? (
-                            <img 
-                              src={book.volumeInfo.imageLinks.smallThumbnail} 
-                              alt={book.volumeInfo.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <BookOpen className="w-6 h-6 text-muted-foreground" />
-                          )}
-                        </div>
-                        <div className="flex-1 truncate">
-                          <p className="font-medium truncate">{book.volumeInfo.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {book.volumeInfo.authors?.join(', ') || 'Unknown Author'}
-                          </p>
-                        </div>
-                      </CommandItem>
-                    ))
-                  ) : null}
+                  {searchResults.map((book) => (
+                    <CommandItem
+                      key={book.id}
+                      onSelect={() => handleSelectBook(book)}
+                      className="flex items-center gap-2 py-2 cursor-pointer"
+                    >
+                      <div className="w-10 h-10 flex-shrink-0 bg-muted flex items-center justify-center rounded overflow-hidden">
+                        {book.volumeInfo.imageLinks?.smallThumbnail ? (
+                          <img 
+                            src={book.volumeInfo.imageLinks.smallThumbnail} 
+                            alt={book.volumeInfo.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <BookOpen className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 truncate">
+                        <p className="font-medium truncate">{book.volumeInfo.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {book.volumeInfo.authors?.join(', ') || 'Unknown Author'}
+                        </p>
+                      </div>
+                    </CommandItem>
+                  ))}
                 </CommandGroup>
               </CommandList>
             </Command>
