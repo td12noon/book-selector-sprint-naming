@@ -49,6 +49,7 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey }) => 
       } catch (error) {
         console.error('Error searching books:', error);
         toast.error('Error searching for books');
+        setSearchResults([]);
       } finally {
         setIsLoading(false);
       }
@@ -111,43 +112,48 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey }) => 
             </div>
           </PopoverTrigger>
           <PopoverContent className="p-0 w-[300px] md:w-[400px]" side="bottom" align="start">
-            <Command>
-              <CommandInput 
-                placeholder="Type to search..." 
-                value={searchQuery}
-                onValueChange={setSearchQuery}
-              />
-              <CommandEmpty>
-                {searchQuery.length < 3 ? 'Type at least 3 characters to search' : 'No books found'}
-              </CommandEmpty>
-              <CommandGroup className="max-h-[300px] overflow-auto">
-                {searchResults.map((book) => (
-                  <CommandItem
-                    key={book.id}
-                    onSelect={() => handleSelectBook(book)}
-                    className="flex items-center gap-2 py-2 cursor-pointer"
-                  >
-                    <div className="w-10 h-10 flex-shrink-0 bg-muted flex items-center justify-center rounded overflow-hidden">
-                      {book.volumeInfo.imageLinks?.smallThumbnail ? (
-                        <img 
-                          src={book.volumeInfo.imageLinks.smallThumbnail} 
-                          alt={book.volumeInfo.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <BookOpen className="w-6 h-6 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex-1 truncate">
-                      <p className="font-medium truncate">{book.volumeInfo.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {book.volumeInfo.authors?.join(', ') || 'Unknown Author'}
-                      </p>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </Command>
+            {/* Fix: Ensure Command component is properly initialized */}
+            <div className="relative">
+              <Command>
+                <CommandInput 
+                  placeholder="Type to search..." 
+                  value={searchQuery}
+                  onValueChange={setSearchQuery}
+                />
+                <CommandEmpty>
+                  {searchQuery.length < 3 ? 'Type at least 3 characters to search' : 'No books found'}
+                </CommandEmpty>
+                <CommandGroup className="max-h-[300px] overflow-auto">
+                  {searchResults && searchResults.length > 0 ? (
+                    searchResults.map((book) => (
+                      <CommandItem
+                        key={book.id}
+                        onSelect={() => handleSelectBook(book)}
+                        className="flex items-center gap-2 py-2 cursor-pointer"
+                      >
+                        <div className="w-10 h-10 flex-shrink-0 bg-muted flex items-center justify-center rounded overflow-hidden">
+                          {book.volumeInfo.imageLinks?.smallThumbnail ? (
+                            <img 
+                              src={book.volumeInfo.imageLinks.smallThumbnail} 
+                              alt={book.volumeInfo.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <BookOpen className="w-6 h-6 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1 truncate">
+                          <p className="font-medium truncate">{book.volumeInfo.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {book.volumeInfo.authors?.join(', ') || 'Unknown Author'}
+                          </p>
+                        </div>
+                      </CommandItem>
+                    ))
+                  ) : null}
+                </CommandGroup>
+              </Command>
+            </div>
           </PopoverContent>
         </Popover>
         
