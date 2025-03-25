@@ -60,7 +60,6 @@ const BookRoulette: React.FC<BookRouletteProps> = ({ books, onRequestRun, isRunn
             
             timerRef.current = setTimeout(() => {
               setShowResult(true);
-              toast.success("Selection complete!");
             }, 600);
             
           }, 1500); // Final slow down duration
@@ -78,7 +77,7 @@ const BookRoulette: React.FC<BookRouletteProps> = ({ books, onRequestRun, isRunn
   };
 
   return (
-    <div className="w-full max-w-md mx-auto mt-8">
+    <div className="w-full max-w-md mx-auto">
       <div className="space-y-2">
         <div className="inline-block px-3 py-1 mb-2 text-xs font-medium tracking-wider text-primary-foreground bg-primary rounded-full animate-fade-in">
           BOOK ROULETTE

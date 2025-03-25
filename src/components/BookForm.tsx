@@ -21,6 +21,7 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Search Google Books API with debounce
   useEffect(() => {
@@ -80,10 +81,6 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
         
         if (data.items && Array.isArray(data.items)) {
           setSearchResults(data.items);
-          // Ensure popover is open when results are found
-          if (data.items.length > 0 && !open) {
-            setOpen(true);
-          }
         } else {
           console.log("No items found in API response:", data);
           setSearchResults([]);
@@ -129,10 +126,12 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
     if (value.trim().length >= 3 && !open) {
       setOpen(true);
     }
-    
-    // Close popover when input is cleared
-    if (value.trim().length < 3 && open) {
-      setOpen(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent popover from closing when pressing Enter inside the input
+    if (e.key === 'Enter') {
+      e.preventDefault();
     }
   };
 
@@ -154,8 +153,10 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
             <div className="relative">
               <Input
                 type="text"
+                ref={inputRef}
                 value={searchQuery}
                 onChange={(e) => handleInputChange(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Search for a book..."
                 className="h-12 px-4 transition-all duration-200 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               />
@@ -174,13 +175,20 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
             align="start"
             sideOffset={4}
             avoidCollisions={false}
+            onInteractOutside={(e) => {
+              // Don't close popover when clicking the input
+              if (inputRef.current && inputRef.current.contains(e.target as Node)) {
+                e.preventDefault();
+              }
+            }}
           >
-            <Command>
+            <Command shouldFilter={false}>
               <CommandInput 
-                placeholder="Type to search..." 
                 value={searchQuery}
                 onValueChange={handleInputChange}
+                placeholder="Type to search..." 
                 className="h-9"
+                autoFocus={false}
               />
               <CommandList className="max-h-[300px]">
                 <CommandEmpty>

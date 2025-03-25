@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import BookForm from '@/components/BookForm';
 import BookList from '@/components/BookList';
 import BookRoulette from '@/components/BookRoulette';
+import BookHistory from '@/components/BookHistory';
 import LogViewer, { LogEntry } from '@/components/LogViewer';
 import { toast } from "sonner";
 import { Book } from '@/types/book';
@@ -10,16 +11,23 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClipboardList } from 'lucide-react';
 
+interface HistoryEntry {
+  title: string;
+  timestamp: Date;
+}
+
 const Index = () => {
   // State management
   const [books, setBooks] = useState<Book[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [selectedBookIndex, setSelectedBookIndex] = useState<number | null>(null);
   const [googleBooksApiKey, setGoogleBooksApiKey] = useState<string>("");
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
   const [logsOpen, setLogsOpen] = useState(false);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
-  // Load books from localStorage on initial load
+  // Load books and history from localStorage on initial load
   useEffect(() => {
     const savedBooks = localStorage.getItem('bookRouletteBooks');
     if (savedBooks) {
@@ -27,6 +35,21 @@ const Index = () => {
         setBooks(JSON.parse(savedBooks));
       } catch (e) {
         console.error('Error loading saved books:', e);
+      }
+    }
+
+    const savedHistory = localStorage.getItem('bookRouletteHistory');
+    if (savedHistory) {
+      try {
+        // Convert string dates back to Date objects
+        const parsedHistory = JSON.parse(savedHistory);
+        const formattedHistory = parsedHistory.map((item: any) => ({
+          ...item,
+          timestamp: new Date(item.timestamp)
+        }));
+        setHistory(formattedHistory);
+      } catch (e) {
+        console.error('Error loading history:', e);
       }
     }
 
@@ -52,6 +75,11 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem('bookRouletteBooks', JSON.stringify(books));
   }, [books]);
+
+  // Save history to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('bookRouletteHistory', JSON.stringify(history));
+  }, [history]);
 
   // Save logs to localStorage
   useEffect(() => {
@@ -97,9 +125,23 @@ const Index = () => {
     }
     setIsRunning(true);
     
+    // Randomly select a book index
+    const randomIndex = Math.floor(Math.random() * books.length);
+    setSelectedBookIndex(randomIndex);
+    
     // Reset the running state after the animation duration
     setTimeout(() => {
       setIsRunning(false);
+      
+      // Add to history when selection is complete
+      const selectedBook = books[randomIndex];
+      const historyEntry: HistoryEntry = {
+        title: selectedBook.title,
+        timestamp: new Date()
+      };
+      
+      setHistory(prev => [historyEntry, ...prev]);
+      toast.success(`"${selectedBook.title}" has been selected!`);
     }, 6000);
   };
 
@@ -162,12 +204,14 @@ const Index = () => {
               />
             </div>
             
-            <div className="md:pl-8 md:border-l">
+            <div className="md:pl-8 md:border-l space-y-8">
               <BookRoulette 
                 books={books.map(book => book.title)} 
                 onRequestRun={handleRunRoulette} 
                 isRunning={isRunning} 
               />
+              
+              <BookHistory history={history} />
             </div>
           </div>
         </div>
