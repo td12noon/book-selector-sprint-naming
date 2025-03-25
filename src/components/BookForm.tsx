@@ -168,18 +168,25 @@ const BookForm: React.FC<BookFormProps> = ({ onAddBook, googleBooksApiKey, onLog
               </div>
             </div>
           </PopoverTrigger>
-          <PopoverContent className="p-0 w-[300px] md:w-[400px]" side="bottom" align="start">
+          <PopoverContent 
+            className="p-0 w-[300px] md:w-[400px]" 
+            side="bottom" 
+            align="start"
+            sideOffset={4}
+            avoidCollisions={false}
+          >
             <Command>
               <CommandInput 
                 placeholder="Type to search..." 
                 value={searchQuery}
                 onValueChange={handleInputChange}
+                className="h-9"
               />
-              <CommandList>
+              <CommandList className="max-h-[300px]">
                 <CommandEmpty>
                   {searchQuery.length < 3 ? 'Type at least 3 characters to search' : 'No books found'}
                 </CommandEmpty>
-                <CommandGroup heading="Search Results" className="max-h-[300px] overflow-auto">
+                <CommandGroup heading="Search Results">
                   {searchResults.map((book) => (
                     <CommandItem
                       key={book.id}
