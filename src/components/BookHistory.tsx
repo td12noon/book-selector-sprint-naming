@@ -1,17 +1,19 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { History, BookOpen } from "lucide-react";
+import { History, BookOpen, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface BookHistoryProps {
   history: Array<{
     title: string;
     timestamp: Date;
   }>;
+  onRemoveEntry?: (index: number) => void;
 }
 
-const BookHistory: React.FC<BookHistoryProps> = ({ history }) => {
+const BookHistory: React.FC<BookHistoryProps> = ({ history, onRemoveEntry }) => {
   return (
     <div className="w-full max-w-md mx-auto mt-8">
       <div className="space-y-2">
@@ -60,11 +62,23 @@ const BookHistory: React.FC<BookHistoryProps> = ({ history }) => {
                       </p>
                     </div>
                   </div>
-                  {index === 0 && (
-                    <div className="text-xs font-medium px-2 py-1 bg-primary/10 text-primary rounded-full">
-                      Latest
-                    </div>
-                  )}
+                  <div className="flex items-center">
+                    {index === 0 && (
+                      <div className="text-xs font-medium px-2 py-1 mr-2 bg-primary/10 text-primary rounded-full">
+                        Latest
+                      </div>
+                    )}
+                    {onRemoveEntry && (
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        onClick={() => onRemoveEntry(index)}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

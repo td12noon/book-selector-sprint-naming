@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import BookForm from '@/components/BookForm';
 import BookList from '@/components/BookList';
@@ -117,6 +116,14 @@ const Index = () => {
     toast.success("Book removed from your collection");
   };
 
+  // New function to handle removing history entries
+  const handleRemoveHistoryEntry = (index: number) => {
+    const updatedHistory = [...history];
+    updatedHistory.splice(index, 1);
+    setHistory(updatedHistory);
+    toast.success("History entry removed");
+  };
+
   // Roulette functions
   const handleRunRoulette = () => {
     if (books.length < 2) {
@@ -211,7 +218,10 @@ const Index = () => {
                 isRunning={isRunning} 
               />
               
-              <BookHistory history={history} />
+              <BookHistory 
+                history={history}
+                onRemoveEntry={handleRemoveHistoryEntry}
+              />
             </div>
           </div>
         </div>

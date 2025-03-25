@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Edit, Check, X, BookOpen, Info } from "lucide-react";
+import { Edit, Check, X, BookOpen, Info, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Book } from '@/types/book';
 import {
@@ -11,6 +11,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface BookListProps {
   books: Book[];
@@ -21,6 +27,7 @@ interface BookListProps {
 const BookList: React.FC<BookListProps> = ({ books, onUpdateBook, onDeleteBook }) => {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [openBookDialog, setOpenBookDialog] = useState<string | null>(null);
 
   const handleEdit = (index: number, title: string) => {
     setEditIndex(index);
@@ -134,6 +141,24 @@ const BookList: React.FC<BookListProps> = ({ books, onUpdateBook, onDeleteBook }
                             </Button>
                           </div>
                         </div>
+                        <div className="mt-1">
+                          {book.description && (
+                            <>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {truncateText(book.description, 150)}
+                              </p>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 mt-1 text-xs px-2 text-muted-foreground"
+                                onClick={() => setOpenBookDialog(book.id)}
+                              >
+                                <ExternalLink className="w-3 h-3 mr-1" />
+                                Read More
+                              </Button>
+                            </>
+                          )}
+                        </div>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-6 mt-1 text-xs px-2 text-muted-foreground">
@@ -161,6 +186,55 @@ const BookList: React.FC<BookListProps> = ({ books, onUpdateBook, onDeleteBook }
           ))
         )}
       </div>
+
+      {/* Full book description dialog */}
+      <Dialog open={!!openBookDialog} onOpenChange={() => setOpenBookDialog(null)}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          {openBookDialog && books.find(b => b.id === openBookDialog) && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl">
+                  {books.find(b => b.id === openBookDialog)?.title}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-4 space-y-4">
+                <div className="flex">
+                  <div className="w-24 h-32 mr-4 flex-shrink-0 bg-muted rounded overflow-hidden">
+                    {books.find(b => b.id === openBookDialog)?.imageUrl ? (
+                      <img 
+                        src={books.find(b => b.id === openBookDialog)?.imageUrl} 
+                        alt={books.find(b => b.id === openBookDialog)?.title}
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-muted-foreground/10">
+                        <BookOpen className="w-10 h-10 text-muted-foreground/50" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {books.find(b => b.id === openBookDialog)?.authors.join(', ')}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {books.find(b => b.id === openBookDialog)?.publishedDate && 
+                        `Published: ${books.find(b => b.id === openBookDialog)?.publishedDate}`}
+                      {books.find(b => b.id === openBookDialog)?.publisher && 
+                        ` • ${books.find(b => b.id === openBookDialog)?.publisher}`}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Description</h3>
+                  <p className="text-sm">
+                    {books.find(b => b.id === openBookDialog)?.description || "No description available."}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
